@@ -3,555 +3,651 @@
 // Earthquakes' Events Analysis
 // By Amirhossein Naemi
 // March, 2015
-// GIT: https://github.com/amirhossein-naemi/Earthquakes-Analysis
+// GIT: https://github.com/amirhossein-naemi/Earthquakes-Analysis-v2
 // This program reads in one integer from a amir.in file and returns the
 //
 //---------------------------------------------------------------------------
 
-#include <stdlib.h>
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <iomanip>
-#include <sstream>
-#include <cstdlib>
-#include <ctype.h>
+#include "earthquake.h"
+#include "station.h"
 #include <ctime>
 #include <time.h>
+#include <sys/timeb.h>
+#include <iomanip>
+#include <sstream>
+#include <vector>
 
 using namespace std;
 
-const int colbreaksize = 10;
-const int colsize = 7;
+earthquake EQ = {};
 
-const int MAXDATA=300;
+//const int colbreaksize = 10;
+//const int colsize = 7;
 
-int valid,invalid,sign;
+const int MAXDATA = 300;
 
-inline void toupper_str(std::string& str) {
-    for (short i = 0; i < str.size(); ++i)
-        str[i] = toupper(str[i]);
+int valid, invalid, sign;
+
+
+string types_of_band_str[3] = { "Longperiod", "Shortperiod", "Broadband" };
+char types_of_band_char[3] = { 'L', 'B', 'H' };
+string types_of_instrument_str[3] = { "High_Gain", "Low_Gain", "Accelerometer" };
+char types_of_instrument_char[3] = { 'H', 'L', 'N' };
+string network_codes_str[5] = { "CE", "CI", "FA", "NP", "WR" };
+
+station stations[MAXDATA];
+
+void toupper_str(std::string& str) {
+
+	for (size_t i = 0; i < str.size(); ++i)
+		str[i] = toupper(str[i]);
 }
 
 string toupper_str_C(std::string str) {
-    toupper_str(str);
-    return str;
+	toupper_str(str);
+	return str;
 }
 
-enum magnitude_type {
-    ML=1, Ms, Mb, Mw
-};
-
-string network_codes_str[5] = {"CE", "CI", "FA", "NP", "WR"};
-
-enum network_codes {
-    CE=1, CI, FA, N
-};
-
-int network_code_enum(string str_net_code) {
-    // Case sensitive
-    if (str_net_code == "CE")
-        return 1;
-    if (str_net_code == "CI")
-        return 2;
-    if (str_net_code == "FA")
-        return 3;
-    if (str_net_code == "NP")
-        return 4;
-    if (str_net_code == "WR")
-        return 5;
-    return -1;
+std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
+	std::stringstream ss(s);
+	std::string item;
+	while (std::getline(ss, item, delim)) {
+		elems.push_back(item);
+	}
+	return elems;
 }
 
-// – Long­period (L)
-// – Short­period (B)
-// – Broadband (H)
-string types_of_band_str[3] = {"Long­period", "Short­period", "Broadband"};
-char types_of_band_char[3] = {'L', 'B', 'H'};
-
-enum types_of_band {
-    Long_period=1, Short_period=2, Broadband=3
-};
-
-int type_of_band_enum(string str_type_of_band) {
-
-    str_type_of_band=toupper_str_C(str_type_of_band);
-    toupper_str(str_type_of_band);
-
-    if (str_type_of_band == "LONG-PERIOD")
-        return 1;
-    if (str_type_of_band == "SHORT-PERIOD")
-        return 2;
-    if (str_type_of_band == "BROADBAND")
-        return 3;
-    return -1;
+std::vector<std::string> split(const std::string &s, char delim) {
+	std::vector<std::string> elems;
+	split(s, delim, elems);
+	return elems;
 }
 
-enum Orientation {
-    NN, E, Z
-};
-
-string types_of_instrument_str[3] = {"High_Gain", "Low_Gain", "Accelerometer"};
-char types_of_instrument_char[3] = {'H', 'L', 'N'};
-
-enum types_of_instrument {
-    High_Gain=1, Low_Gain, Accelerometer
-};
-
-// function to convert from "type_of_instrument" to a string...
-string type_of_inst_string(types_of_instrument type_of_inst) {
-
-    switch (type_of_inst) {
-    case High_Gain:
-        return "High Gain";
-    case Low_Gain:
-        return "Low Gain";
-    case Accelerometer:
-        return "Accelerometer";
-    default:
-        return "ILLEGAL";
-    }
-}
-
-int type_of_instrument_enum(string str_type_of_inst) {
-    toupper_str(str_type_of_inst);
-    //Case insensitive
-    if (str_type_of_inst == "LOW-GAIN")
-        return 1;
-    if (str_type_of_inst == "HIGH-GAIN")
-        return 2;
-    if (str_type_of_inst == "ACCELEROMETER")
-        return 2;
-    return -1;
-}
-
-// Following a valid header, the input file has an indefinite number of entries,
-// one per row, but no more than 300 (this limit is important, as you are
-// supposed to crete an array to store the input entries). Each entry in the
-// table is composed of the following:
-struct EQ {
-
-    network_codes network_code;
-    string station_code;
-    types_of_band type_of_band;
-    types_of_instrument type_of_instrument;
-    string Orientation;
-
-};
-
-EQ eqs[MAXDATA];
-
-void print_output(ofstream & o, stringstream & txt, bool only2file=false) {
-    if(!only2file) cout << txt.str();
-    o << txt.str();
-    txt.str( std::string() );
-    txt.clear();
+void print(ofstream & o, stringstream & txt, bool only2file = false) {
+	std::cout.precision(3);
+	o.precision(3);
+	if (!only2file) cout << txt.str();
+	o << txt.str();
+	txt.str(std::string());
+	txt.clear();
 }
 
 void open_input(ifstream & ifile, string ifilename, ofstream & log) {
-    // Sanity check on the file stream
+	// Sanity check on the file stream
 
-    ifile.open(ifilename.c_str());
-    if (!ifile.is_open()) {
-        stringstream str;
-        str << "Error! Cannot open input file: " <<  ifilename << endl;
-        print_output(log,str);
-        exit(0);
-    }
-    return;
+	ifile.open(ifilename.c_str());
+	if (!ifile.is_open()) {
+		stringstream str;
+		str << "Error! Cannot open input file: " << ifilename << endl;
+		print(log, str);
+		exit(0);
+	}
+	return;
 }
 
 void open_output(ofstream & o, string ofilename) {
-    // Print on output file
-    o.open(ofilename.c_str());
-    if (!o.is_open()) {
-        cout << "Error! The output file: " + ofilename + " is locked\n";
+	// Print on output file
+	o.open(ofilename.c_str());
+	if (!o.is_open()) {
+		cout << "Error! The output file: " + ofilename + " is locked\n";
 
-        exit(0);
-    }
-    return;
+		exit(0);
+	}
+	return;
 }
 
 //---------------------------------------------------------------------------
 
-bool is_there_any_err(EQ eq) {
-    if (eq.network_code <1 || eq.network_code >5)
-        return true;
+bool is_there_any_err(station st) {
+	if (st.network_code <1 || st.network_code >5)
+		return true;
 
-    //if (eq.type_of_band <1 || eq.type_of_band >5)
-    //    return true;
+	//if (st.type_of_band <1 || st.type_of_band >5)
+	//    return true;
 
-    //if (eq.type_of_instrument <1 || eq.type_of_instrument >5)
-    //    return true;
+	//if (st.type_of_instrument <1 || st.type_of_instrument >5)
+	//    return true;
 
-    return false;
+	return false;
 }
 
 bool isok_network_code(string str){
-    // Network code: Case sensitive: 2 characters. Must be in capital letters to
-    // be valid. It can be any of the following:
-    // network_code network_code;
-    // string network_code;
-    // char network_code;
-    if(str.size()==2)
-    {
-        for(int i=0;i<2;i++)
-        {
-            if(!isalpha(str[i]))
-                return false;
-            if(!isupper(str[i]))
-                return false;
-        }
-        // if return true, means everything is fine
-        return true;
-    }
-    return false;
+	// Network code: Case sensitive: 2 characters. Must be in capital letters to
+	// be valid. It can be any of the following:
+	// network_code network_code;
+	// string network_code;
+	// char network_code;
+	if (str.size() == 2)
+	{
+		for (int i = 0; i < 2; i++)
+		{
+			if (!isalpha(str[i]))
+				return false;
+			if (!isupper(str[i]))
+				return false;
+		}
+		// if return true, means everything is fine
+		return true;
+	}
+	return false;
 }
 
 bool isok_station_code(string str){
-    // Station code: Case sensitive: Must be either 3 alphabetic characters in
-    // capital letters, or 5 numeric characters to be valid. station_code:
-    // Case sensitive : Must be either 3 alphabetic characters in
-    // capital letters, or 5 numeric characters to be valid.string ssn;
-    if(str.size()==3)
-    {
-        for(int i=0;i<3;i++)
-        {
-            if(!isalpha(str[i]))
-                return false;
-            if(!isupper(str[i]))
-                return false;
-        }
+	// Station code: Case sensitive: Must be either 3 alphabetic characters in
+	// capital letters, or 5 numeric characters to be valid. station_code:
+	// Case Sensitive : Must be either 3 alphabetic characters in
+	// capital letters, or 5 numeric characters to be valid.string ssn;
+	if (str.size() == 3)
+	{
+		for (int i = 0; i < 3; i++)
+		{
+			if (!isalpha(str[i]))
+				return false;
+			if (!isupper(str[i]))
+				return false;
+		}
 
-        // if return true, means everything is fine
-        return true;
-    }
+		// if return true, means everything is fine
+		return true;
+	}
 
-    if(str.size()==5)
-    {
-        for(int i=0;i<5;i++)
-            if(!isdigit(str[i]))
-                // there is an error
-                    return false;
+	if (str.size() == 5)
+	{
+		for (int i = 0; i < 5; i++)
+		if (!isdigit(str[i]))
+		{
+			// there is an error
+			return false;
+		}
 
-        // if return true, means everything is fine
-        return true;
-    }
+		// if return true, means everything is fine
+		return true;
+	}
 
-    // there is an error
-    return false;
+	// there is an error
+	return false;
 }
 
 
 bool isok_type_of_band(string str){
 
-    // Type of band: Case insensitive: One word. It can be any of the following
-    // to be valid (the code in
-    // parenthesis is for later reference):
-    // string type_of_band;
-    types_of_band t=(types_of_band)type_of_band_enum(str);
-    if (t<1 || t>3) return false;
-    return true;
+	// Type of band: Case insensitive: One word. It can be any of the following
+	// to be valid (the code in
+	// parenthesis is for later reference):
+	// string type_of_band;
+	types_of_band t = (types_of_band)type_of_band_enum(str);
+	if (t<1 || t>3) return false;
+	return true;
 }
 
 bool isok_type_of_instrument(string str){
-    // Type of instrument: Case insensitive: One word. It can be any of the
-    // following to be valid (the code
-    // in parenthesis is for later reference):
-    // type_of_instrument type_of_instrument;
-    // string type_of_instrument;
-    return true;
+	// Type of instrument: Case insensitive: One word. It can be any of the
+	// following to be valid (the code
+	// in parenthesis is for later reference):
+	// type_of_instrument type_of_instrument;
+	// string type_of_instrument;
+	return true;
 }
 
 bool isok_Orientation(string str){
-    // Orientation: Case insensitive: a one to three characters combination.
-    // Each character can be any of the following two options (alphabetic or
-    // numeric, but not a combination of both):
-    // – N, E, or Z (one, two or three chars)
-    // – 1, 2, or 3 (one, two or three chars)
-    return true;
+	// Orientation: Case insensitive: a one to three characters combination.
+	// Each character can be any of the following two options (alphabetic or
+	// numeric, but not a combination of both):
+	// N, E, or Z (one, two or three chars)
+	// 1, 2, or 3 (one, two or three chars)
+
+	toupper_str(str);
+	size_t n = str.size();
+	if (!isdigit(str[0]))
+	{
+		for (int i = 0; i < n; i++)
+		{
+			if (!(str[i] == 'N' || str[i] == 'E' || str[i] == 'Z'))
+				return false; // there is an error
+		}
+	}
+	else
+	{
+		for (int i = 0; i < n; i++)
+		{
+			if (!(str[i] == '1' || str[i] == '2' || str[i] == '3'))
+				return false; // there is an error
+		}
+	}
+
+	return true;
 }
 
 bool isok_magnitude(string str){
-    toupper_str(str);
-    if (str=="ML" || str=="MS" || str=="MB" || str=="MW")
-        return true;
-    return false;
+	toupper_str(str);
+	if (str == "ML" || str == "MS" || str == "MB" || str == "MW")
+		return true;
+	return false;
 }
 
 bool isok_magnitude_size(float magnitude) {
-    if (magnitude <= 0)
-        return false;
-    return true;
+	if (magnitude <= 0)https://www.google.com/images/srpr/logo11w.png
+	return false;
+	return true;
 }
 
-bool isok_date(string str) {
-    // Date and time of the earthquake in format: mm/dd/yyyy
-    // or mm­dd­yyyy, and hh:mm:ss.fff time_zone
-    // e.g. 02/08/2015 17:45:02.000 PST
-    string delim = "/";
-    string y, m, d;
+bool isok_date() {
 
-    m = str.substr(0, 2);
-    d = str.substr(3, 2);
-    y = str.substr(6, 4);
+	if (EQ.yr > 2100 || EQ.yr<1900)
+		return false;
 
-    if (m>"12" || m < "01")
-        return false;
-    if (y>"2020" || y < "1900")
-        return false;
-    if (d>"31" || d < "01")
-        return false;
-    return true;
+	if (EQ.day>31 || EQ.day < 1)
+		return false;
+
+	return true;
+
 }
 
 bool isok_time(string str) {
-    string delim = "/";
-    return true;
+	string delim = "/";
+	return true;
 }
 
 bool isok_timezone(string str) {
-    toupper_str(str);
-    if (str=="PST" || str=="CST" || str=="EST" || str=="MST")
-        return true;
-    return false;
+	toupper_str(str);
+	if (str == "PST" || str == "CST" || str == "EST" || str == "MST")
+		return true;
+	return false;
 }
 
-void read_header(ifstream & in, ofstream & log) {//, EQ & eqs) {
+//time_t parse_dt(string str2)
+void parse_dt(string str2, ofstream & log)
+{
+	// Second row: Date/time
+	//    istringstream(ldt) >> dt >> tm >> tz;
+	//in >> dt >> tm >> tz;
+	//char cdt[50]; strcpy(cdt, ldt.c_str());
+	//istringstream(cdt) >> dt >> tm >> tz;
 
-    string eID, ID, dt, nam, geo,  tm, tz,magnitude_type;
-    float magnitude_size;
-    stringstream str;
 
-    // First row: Event ID
-    in  >> eID;
-    str << eID << endl;
-    print_output(log,str);
-    str.clear();
 
-    in >> dt >> tm >> tz;
-    str <<dt << tm << tz << endl;
-    std::getline(in, nam);//err
-    print_output(log,str);
+	//str << dt << tm << tz << endl;
+	//std::getline(in, nam);
+	//print(log, str);
 
-    if(!isok_date(dt))
-    {
-        str << "Error! date is invalid" << endl;
-        print_output(log,str);
-        exit(0);
-    }
 
-    if(!isok_time(tm) || !isok_timezone(tz))
-    {
-        str << "Error! time is invalid" << endl;
-        print_output(log,str);
-        exit(0);
-    }
 
-    // Third row: Name of the earthquake (may be multiple words)
-    std::getline(in, nam);
-    str << nam << endl;
-    print_output(log,str);
+	///* 2010-11-04T23:23:01Z */
+	//time_t zulu_time(const char *time_str)
+	//{
+	//	struct tm tm = { 0 };
 
-    // Fourth row: epicenter location (three doubles: longitude, latitude, and
-    // depth), followed by the magnitude type and magnitude size (a string and a
-    //  float, respectively).
-    // e.g. -115.66 31.53 0.9 mw 4.9
-    double longitude, latitude, depth;
-    in >> longitude >> latitude >> depth >>magnitude_type >> magnitude_size;
+	//	if (!strptime(time_str, "%Y-%m-%dT%H:%M:%SZ", &tm))
+	//		return (time_t)-1;
 
-    if(!isok_magnitude(magnitude_type))
-    {
-        str << "Error! Magnitude type is invalid" << endl;
-        print_output(log,str);
-        exit(0);
-    }
+	//	return mktime(&tm) - timezone;
+	//}
 
-    if(!isok_magnitude_size(magnitude_size))
-    {
-        str << "Error! Magnitude must be real positive" << endl;
-        print_output(log,str);
-        exit(0);
-    }
+	//time_t rawtime = {};
+	//struct tm * tm;
+	//tm = {};
+	//or alternatively we can use: memset(&tm, 0, sizeof(struct tm));
+	//memset(&tm, 0, sizeof(struct tm));
+	string dt, tm, tz;
+	string year, mnth, day, hour, min, sec, ms;
+	//int year, month, day, hour, min, sec;
+	//float ms;
+	//char str[28]("02/08/2015 17:45:02.000 PST");
+	char str[50];
+	//strcpy(str, tmp.c_str());
+	strncpy(str, str2.c_str(), sizeof(str));
+	str[sizeof(str)-1] = 0;
+	//char str[50] = "02/08/2015 17:45:02.000 PST";
+
+	//struct std::tm tm = {};
+	//02/08/2015 17:45:02.000 PST
+	//std::istringstream ss("16:35:12");
+	//std::istringstream ss2("12/03/2014");
+	//char str2[256];
+	//const char *str = "12/03/2014";
+	//ss >> std::get_time(&tm, "%H:%M:%S"); // or just %T in this case
+	//std::time_t time2 = mktime(&tm);
+	//cout << timeDate.tm_sec << endl;
+	//cout << time2;
+
+	replace(str, str + strlen(str), '/', ' ');
+	replace(str, str + strlen(str), ':', ' ');
+	//istringstream(str) >> day >> month >> year >> hour >> min >> sec >> ms >> tz;
+	//stringstream(str) >> mnth >> day >> year >> hour >> min >> sec >> ms >> tz;
+	//istringstream(str) >> month >> EQ.day >> EQ.yr >> EQ.hr >> EQ.min >> EQ.sec >> EQ.ms >> EQ.tz;
+	std::vector<std::string> aln = split(str2, ' ');
+	std::vector<std::string> adt = split(aln[0], '/');
+	std::vector<std::string> atm = split(aln[1], ':');
+	std::vector<std::string> asc = split(atm[2], '.');
+
+	day = adt[1];
+	year = adt[2];
+	hour = atm[0];
+	min = atm[1];
+	sec = asc[0];
+	ms = asc[1];
+	tz = aln[2];
+
+	EQ.month = mnth_str2enum(adt[0]);
+	EQ.day = str2int(day);
+	EQ.yr = str2int(year);
+	EQ.hr = str2int(hour);
+	EQ.min = str2int(min);
+	EQ.sec = str2int(sec);
+	EQ.ms = str2int(ms);
+	EQ.tz = tz;
+
+	stringstream stro;
+	if (!isok_date())
+	{
+		stro << "Error! date is invalid" << endl;
+		print(log, stro);
+		exit(0);
+	}
+
+	if (!isok_time(aln[1]) || !isok_timezone(tz))
+	{
+		stro << "Error! time is invalid" << endl;
+		print(log, stro);
+		exit(0);
+	}
+
+	//time(&rawtime);
+	//tm = localtime(&rawtime);
+	//tm->tm_year = year - 1900;
+	////tm->tm_year = year;
+	////tm->tm_mon = month - 1;
+	//tm->tm_mon = month;
+	//tm->tm_mday = day;
+	//tm->tm_hour = hour;
+	//tm->tm_min = min;
+	//tm->tm_sec = sec;
+	////tm->
+	//mktime(tm);
+
+	//strftime(str, sizeof(str), "%H:%M:%S %A", tm);
+	//cout << str << endl;
+	//strftime(str, sizeof(str), "%m/%d/%Y", tm);
+	//cout << str << endl;
+	////system("pause");
+
+
+	////	struct tm * timeptr;
+	////	int gmtime_hours;
+	////	timeptr = localtime(&rawtime);
+
+	//return rawtime;
 }
-void read_data(ifstream & in,ofstream & out, ofstream & log) {
 
-    stringstream str;
-    string eqnet, eqst,eqbnd,eqins,eqor;
-    EQ   eqtmp;
-    int  cnt=0, i = 0;
-    bool noerr;
-    bool other_err=false;
+void parse_mag(string lm, ofstream & log){
+	// Fourth row: epicenter location (three doubles: longitude, latitude, and
+	// depth), followed by the magnitude type and magnitude size (a string and a
+	//  float, respectively).
+	// e.g. -115.66 31.53 0.9 mw 4.9
+	char* pEnd;
+	stringstream str;
+	string longitude, latitude, elevation, geo, magnitude_type, magnitude_size;
+	//double longitude, latitude, elevation;
+	float fmagnitude_size;
+	//istringstream not compatible with mingw
+	//istringstream(lm) >> longitude >> latitude >> depth >> magnitude_type >> magnitude_size;
+	//stringstream(lm) >> longitude >> latitude >> elevation >> magnitude_type >> magnitude_size;
+	std::vector<std::string> astr = split(lm, ' ');
+	longitude = astr[0];
+	latitude = astr[1];
+	elevation = astr[2];
+	magnitude_type = astr[3];
+	magnitude_size = astr[4];
+	char cmagnitude_size[50];
+	strcpy(cmagnitude_size, magnitude_size.c_str());
+	//fmagnitude_size = std::stof(magnitude_size);
+	fmagnitude_size = std::strtod(cmagnitude_size, &pEnd);
+	if (!isok_magnitude(magnitude_type))
+	{
+		str << "Error! Magnitude type is invalid" << endl;
+		print(log, str);
+		exit(0);
+	}
+	//EQ.magnitude_Type = magnitude_type;
 
-    while (in >> eqnet) {
-        cnt++;
-        noerr=true;
-        try
-        {
-            in >> eqst >> eqbnd >> eqins >> eqor;
+	EQ.magnitude = fmagnitude_size;
+	char clongitude[50], clatitude[50], celevation[50];
+	strcpy(celevation, elevation.c_str());
+	strcpy(clatitude, latitude.c_str());
+	strcpy(celevation, elevation.c_str());
 
-            if(isok_network_code(eqnet))
-                eqtmp.network_code = (network_codes)network_code_enum(eqnet);
-            else
-            {
-                noerr=false;
-                str << "Entry # " <<  setw(3) << right << cnt
-                    << " ignored. Invalid network.\n";
-                print_output(log,str);
-            }
+	EQ.lon = std::strtod(clongitude, &pEnd);
+	EQ.lat = std::strtod(clatitude, &pEnd);
+	EQ.elv = std::strtod(celevation, &pEnd);
 
-            if(isok_station_code(eqst))
-                eqtmp.station_code=eqst;
-            else
-            {
-                noerr=false;
-                str << "Entry # " <<  setw(3) << right << cnt
-                    << " ignored. Invalid station name.\n";
-                print_output(log,str);
-            }
+	if (!isok_magnitude_size(fmagnitude_size))
+	{
+		str << "Error! Magnitude must be real positive" << endl;
+		print(log, str);
+		exit(0);
+	}
+}
 
-            if(isok_type_of_band(eqbnd))
-                eqtmp.type_of_band = (types_of_band)type_of_band_enum(eqbnd);
-            else
-            {
-                noerr=false;
-                str <<"Entry # " << setw(3) << cnt
-                    << " ignored. Invalid band type.\n";
-                print_output(log,str);
-            }
+void read_header(ifstream & in, ofstream & log) {//, st & stations) {
 
-            if(isok_type_of_instrument(eqins))
-                eqtmp.type_of_instrument =
-                   (types_of_instrument)type_of_instrument_enum(eqins);
-            else
-            {
-                noerr=false;
-                str <<"Entry # " << cnt
-                    << " ignored. Invalid instrument.\n";
-                print_output(log,str);
-            }
+	string lID, ldt, lnam, lm, eID, ID, dt, nam, geo, tm, tz, magnitude_type;
+	stringstream str;
 
-            if(isok_Orientation(eqor))
-                eqtmp.Orientation=eqor;
-            else
-            {
-                noerr=false;
-                str <<"Entry # " << cnt
-                    << " ignored. Invalid Orientation.\n";
-                print_output(log,str);
-            }
+	std::getline(in, lID);
+	std::getline(in, ldt);
+	std::getline(in, lnam);
+	std::getline(in, lm);
+	//in >> longitude >> latitude >> depth >> magnitude_type >> magnitude_size;
 
-        }
-        catch (int e)
-        {
-            // any other errors
-            other_err=true;
-            cout << "An exception occurred. Exception Nr. " << e << '\n';
-        }
+	//time_t t = {};
+	//t=parse_dt(ldt);
+	parse_dt(ldt, log);
+	parse_mag(lm, log);
+	//struct tm * timeptr;
+	//int gmtime_hours;
+	//timeptr = localtime(&t);
 
-        if (is_there_any_err(eqtmp))
-            noerr=false;
+	// First row: Event ID
+	//in  >> eID;
+	str << eID << endl;
+	print(log, str);
+	str.clear();
 
-        if (other_err)
-            noerr=false;
+	EQ.earthquake_name = lnam;
+	EQ.id = lID;
 
-        if (noerr) {
 
-			struct std::tm tm;
-			std::istringstream ss("16:35:12");
-			ss >> std::get_time(&tm, "%H:%M:%S"); // or just %T in this case
-			std::time_t time = mktime(&tm);
+	// Third row: Name of the earthquake (may be multiple words)
+	//std::getline(in, nam);
+	str << lnam << endl;
+	print(log, str, true);
 
-			struct std::tm when;
-			std::istringstream ss2("02 / 08 / 2015 17:45 : 02.000 PST");
-			ss2 >> std::get_time(&when, "%R");   // extract time (24H format)
+}
 
-//			cout << timeDate.tm_sec << endl;
-			cout << time;
-            eqs[i] = eqtmp;
-            i++;
-        }
-    }
-    invalid=cnt-i;
-    valid= i;
-    if (valid < 1) {
-        str <<"logor! input number should be equal or greater than 1\n";
-        print_output(log,str);
-        //return 2;
-        exit(0);
-    }
+
+void read_data(ifstream & in, ofstream & out, ofstream & log) {
+
+	stringstream str;
+	string eqnet, eqst, eqbnd, eqins, eqor;//eq->st
+	station   eqtmp;//sttmp
+	int  cnt = 0, i = 0;
+	bool noerr;
+	bool other_err = false;
+
+	while (in >> eqnet) {
+		cnt++;
+		noerr = true;
+		try
+		{
+			in >> eqst >> eqbnd >> eqins >> eqor;
+
+			if (isok_network_code(eqnet))
+				eqtmp.network_code = (network_codes)network_code_enum(eqnet);
+			else
+			{
+				noerr = false;
+				str << "Entry # " << setw(3) << right << cnt
+					<< " ignored. Invalid network.\n";
+				print(log, str);
+			}
+
+			if (isok_station_code(eqst))
+				eqtmp.station_name = eqst;
+			else
+			{
+				noerr = false;
+				str << "Entry # " << setw(3) << right << cnt
+					<< " ignored. Invalid station name.\n";
+				print(log, str);
+			}
+
+			if (isok_type_of_band(eqbnd))
+				eqtmp.type_of_band = (types_of_band)type_of_band_enum(eqbnd);
+			else
+			{
+				noerr = false;
+				str << "Entry # " << setw(3) << cnt
+					<< " ignored. Invalid band type.\n";
+				print(log, str);
+			}
+
+			if (isok_type_of_instrument(eqins))
+				eqtmp.type_of_instrument =
+				(types_of_instrument)type_of_instrument_enum(eqins);
+			else
+			{
+				noerr = false;
+				str << "Entry # " << setw(3) << cnt
+					<< " ignored. Invalid instrument.\n";
+				print(log, str);
+			}
+
+			if (isok_Orientation(eqor))
+				eqtmp.Orientation = eqor;
+			else
+			{
+				noerr = false;
+				str << "Entry # " << setw(3) << cnt
+					<< " ignored. Invalid Orientation.\n";
+				print(log, str);
+			}
+
+		}
+		catch (int e)
+		{
+			// any other errors
+			other_err = true;
+			cout << "An exception occurred. Exception Nr. " << e << '\n';
+		}
+
+		if (is_there_any_err(eqtmp))
+			noerr = false;
+
+		if (other_err)
+			noerr = false;
+
+		if (noerr) {
+
+
+			stations[i] = eqtmp;
+			i++;
+		}
+	}
+	invalid = cnt - i;
+	valid = i;
+	if (valid < 1) {
+		str << "logor! input number should be equal or greater than 1\n";
+		print(log, str);
+		//return 2;
+		exit(0);
+	}
 
 }
 
 void process(ifstream & ifile, ofstream & log){
 
-    stringstream str;
-    str << "E# 08 February 2015 17:45:02.000 PST Mw 4.9 Maneadero Baja"
-        << " California Earthquake [37314320CI] (­115.66, 31.53, 0.9)\n";
-    print_output(log,str);
-    sign=0;
-    for (int i = 0; i <= valid; i++) {
-        for (int j = 0; j < eqs[i].Orientation.size(); j++) {
+	stringstream str, str2;
+	str.precision(3);
+	str << "# " << EQ.day << " " << mnth_enum2str(EQ.month) << " " << EQ.yr << " ";
+	str << EQ.hr << ":" << EQ.min << ":" << EQ.sec << ":" << std::setprecision(3) << EQ.ms << " " << EQ.tz;
+	str << " " << EQ.magnitude_Type << " " << EQ.magnitude << " ";
+	str << EQ.earthquake_name << " [" << EQ.id << "] (";
+	str << EQ.lon << ", " << EQ.lat << ", " << EQ.elv << ")" << endl;
 
-            str << network_codes_str[eqs[i].network_code-1]
-                << '.' << eqs[i].station_code << '.' << types_of_band_char
-                [eqs[i].type_of_band-1] << types_of_instrument_char
-                [eqs[i].type_of_instrument-1] << eqs[i].Orientation[j] << endl;
 
-            sign++;
-        }
-    }
 
-    print_output(log,str);
+	sign = 0;
+	for (int i = 0; i <= valid; i++) {
+		for (size_t j = 0; j < stations[i].Orientation.size(); j++) {
+
+			str2 << EQ.id << '.' << network_codes_str[stations[i].network_code - 1]
+				<< '.' << stations[i].station_name << '.' << types_of_band_char
+				[stations[i].type_of_band - 1] << types_of_instrument_char
+				[stations[i].type_of_instrument - 1] << stations[i].Orientation[j] << endl;
+
+			sign++;
+		}
+	}
+
+	str << sign << endl;
+
+	print(log, str, true);
+
+	print(log, str2, true);
 }
 
 int main() {
-    // const int MAXDATA=300;
-    // EQ eqs[MAXDATA];
-    // EQ eqs[300];
+	// const int MAXDATA=300;
+	// station stations[MAXDATA];
+	// station stations[300];
 
-    string   inputfilename;
-    ofstream log, out;
-    ifstream in;
-    stringstream str;
+	string   inputfilename;
+	ofstream log, out;
+	ifstream in;
+	stringstream str;
 
-    open_output(log, "amir.log");
-    open_output(out, "amir.out");
+	open_output(log, "amir.log");
+	open_output(out, "amir.out");
 
-    // Prompt user for input/output file
-    cout << "Enter input file: ";
-    cin  >> inputfilename;
-    // sample data for testing purposes
-    // inputfilename= "amir.in";
-    open_input(in, inputfilename, log);
+	// Prompt user for input/output file
+	cout << "Enter input file: ";
+	cin  >> inputfilename;
+	// sample data for testing purposes
 
-    str << "Processing input..."  << endl;
-    print_output(log,str);
+	//cout << "Inter fn: " << endl;
+	//cin.getline(str, sizeof(str));
 
-    read_header(in,log);
+	//inputfilename = "amir.in";
 
-    str << "Header read correctly!"  << endl << endl;
-    print_output(log,str);
+	str << endl << "Opening file: " << inputfilename << endl;
+	open_input(in, inputfilename, log);
+
+	str << "Processing input..." << endl;
+	print(log, str);
+
+	read_header(in, log);
+
+	str << "Header read correctly!" << endl << endl;
+	print(log, str);
 
 
-    read_data(in,out,log);
-    process(in,out);
-    print_output(out, str);
+	read_data(in, out, log);
+	process(in, out);
+	print(out, str);
 
-    str << endl << "Total invalid entries ignored: " << invalid << endl
-        << "Totoal valid entries read: " << valid << endl
-        <<"Total singal names produced: " << sign << endl
-        << "Finished!" << endl;
-    print_output(log,str);
+	str << endl << "Total invalid entries ignored: " << invalid << endl
+		<< "Totoal valid entries read: " << valid << endl
+		<< "Total singal names produced: " << sign << endl;
+	print(log, str);
 
-    if (log.is_open())
-        log.close();
-    if (in.is_open())
-        in.close();
-    if (out.is_open())
-        out.close();
+	if (log.is_open())
+		log.close();
+	if (in.is_open())
+		in.close();
+	if (out.is_open())
+		out.close();
 
-    return 0;
+	return 0;
 }
 
 
