@@ -248,9 +248,12 @@ string network_codes_str[5]      = { "CE", "CI", "FA", "NP", "WR" };
 void parse_dt(string str2, ofstream & log)
 {
 
+    stringstream stro;
     string dt, tm, tz;
     string year, mnth, day, hour, min, sec, ms;
 
+    try {
+     
     char str[50];
     strncpy(str, str2.c_str(), sizeof(str));
     str[sizeof(str)-1] = 0;
@@ -263,34 +266,76 @@ void parse_dt(string str2, ofstream & log)
     std::vector<std::string> atm = split(aln[1], ':');
     std::vector<std::string> asc = split(atm[2], '.');
 
-    day  = adt[1];
-    year = adt[2];
-    hour = atm[0];
-    min  = atm[1];
-    sec  = asc[0];
-    ms   = asc[1];
-    tz   = aln[2];
+    bool dateisOK = true;
+    bool timeisOK = true;
 
-    EQ.month = mnth_str2enum(adt[0]);
-    EQ.day   = str2int(day);
-    EQ.yr    = str2int(year);
-    EQ.hr    = str2int(hour);
-    EQ.min   = str2int(min);
-    EQ.sec   = str2int(sec);
-    EQ.ms    = str2int(ms);
-    EQ.tz    = tz;
+    size_t n1 = adt.size();
+    for (size_t i = 0; i < n1; i++)
+    {
+        size_t n2 = adt[i].size();
+        for (size_t ii = 0; ii < n2; ii++)
+        {
+            if (!isdigit(adt[i][ii]))
+                // there is an error
+                dateisOK=false;
+        }
+    }
 
-    stringstream stro;
-    if (!isok_date())
+    n1 = atm.size() - 1;
+    for (size_t i = 0; i < n1; i++)
+    {
+        size_t n2 = atm[i].size();
+        for (size_t ii = 0; ii < n2; ii++)
+        {
+            if (!isdigit(atm[i][ii]))
+                // there is an error
+                timeisOK = false;
+        }
+    }
+    
+    if (dateisOK)
+    {
+        day = adt[1];
+        year = adt[2];
+        hour = atm[0];
+
+        EQ.month = mnth_str2enum(adt[0]);
+        EQ.day = str2int(day);
+        EQ.yr = str2int(year);
+    }
+
+    if (timeisOK)
+    {
+        min = atm[1];
+        sec = asc[0];
+        ms = asc[1];
+        tz = aln[2];
+
+        EQ.hr = str2int(hour);
+        EQ.min = str2int(min);
+        EQ.sec = str2int(sec);
+        EQ.ms = str2int(ms);
+        EQ.tz = tz;
+    }
+
+
+    if (!isok_date() || !dateisOK)
     {
         stro << "Error! date is invalid" << endl;
         print(log, stro);
         exit(0);
     }
 
-    if (!isok_time(aln[1]) || !isok_timezone(tz))
+    if (!isok_time(aln[1]) || !isok_timezone(tz) || !timeisOK)
     {
         stro << "Error! time is invalid" << endl;
+        print(log, stro);
+        exit(0);
+    }
+    
+    }
+    catch (int n) {
+        stro << "Error! date/time is invalid" << endl;
         print(log, stro);
         exit(0);
     }
