@@ -20,51 +20,40 @@
 using namespace std;
 
 earthquake EQ = {};
-
-const int MAXDATA = 300;
-station stations[MAXDATA];
+const int  MAXDATA = 300;
+station    stations[MAXDATA];
 
 int valid, invalid, sign;
 
-string types_of_band_str[3]       = { "Longperiod", "Shortperiod","Broadband" };
-char types_of_band_char[3]        = { 'L', 'B', 'H' };
-string types_of_instrument_str[3] = { "High_Gain", "Low_Gain",
-"Accelerometer" };
-char types_of_instrument_char[3]  = { 'H', 'L', 'N' };
-string network_codes_str[5]       = { "CE", "CI", "FA", "NP", "WR" };
-
-void toupper_str(std::string& str) {
-
-    for (size_t i = 0; i < str.size(); ++i)
-        str[i] = toupper(str[i]);
-}
-
-string toupper_str_C(std::string str) {
-    toupper_str(str);
-    return str;
-}
-
 std::vector<std::string> &split(const std::string &s, char delim,
     std::vector<std::string> &elems) {
+
     std::stringstream ss(s);
     std::string item;
     while (std::getline(ss, item, delim)) {
         elems.push_back(item);
     }
+
     return elems;
 }
 
 std::vector<std::string> split(const std::string &s, char delim) {
+
     std::vector<std::string> elems;
     split(s, delim, elems);
+
     return elems;
 }
 
 void print(ofstream & o, stringstream & txt, bool only2file = false) {
+
     std::cout.precision(3);
     o.precision(3);
+
     if (!only2file) cout << txt.str();
+
     o << txt.str();
+
     txt.str(std::string());
     txt.clear();
 }
@@ -79,10 +68,12 @@ void open_input(ifstream & ifile, string ifilename, ofstream & log) {
         print(log, str);
         exit(0);
     }
+
     return;
 }
 
 void open_output(ofstream & o, string ofilename) {
+
     // Print on output file
     o.open(ofilename.c_str());
     if (!o.is_open()) {
@@ -90,6 +81,7 @@ void open_output(ofstream & o, string ofilename) {
 
         exit(0);
     }
+
     return;
 }
 
@@ -191,7 +183,7 @@ bool isok_Orientation(string str){
     size_t n = str.size();
     if (!isdigit(str[0]))
     {
-        for (int i = 0; i < n; i++)
+        for (size_t i = 0; i < n; i++)
         {
             if (!(str[i] == 'N' || str[i] == 'E' || str[i] == 'Z'))
                 return false; // there is an error
@@ -199,7 +191,7 @@ bool isok_Orientation(string str){
     }
     else
     {
-        for (int i = 0; i < n; i++)
+        for (size_t i = 0; i < n; i++)
         {
             if (!(str[i] == '1' || str[i] == '2' || str[i] == '3'))
                 return false; // there is an error
@@ -216,7 +208,7 @@ bool isok_magnitude(string str){
     return false;
 }
 
-bool isok_magnitude_size(float magnitude) {
+bool isok_magnitude_size(double magnitude) {
     if (magnitude <= 0)
     return false;
     return true;
@@ -246,6 +238,13 @@ bool isok_timezone(string str) {
     return false;
 }
 
+string types_of_band_str[3] = { "Longperiod", "Shortperiod", "Broadband" };
+char types_of_band_char[3]        = { 'L', 'B', 'H' };
+string types_of_instrument_str[3] = { "High_Gain", "Low_Gain",
+"Accelerometer" };
+char types_of_instrument_char[3] = { 'H', 'L', 'N' };
+string network_codes_str[5]      = { "CE", "CI", "FA", "NP", "WR" };
+
 void parse_dt(string str2, ofstream & log)
 {
 
@@ -259,7 +258,7 @@ void parse_dt(string str2, ofstream & log)
     replace(str, str + strlen(str), '/', ' ');
     replace(str, str + strlen(str), ':', ' ');
 
-    std::vector<std::string> aln = split(str2, ' ');
+    std::vector<std::string> aln = split(str2  , ' ');
     std::vector<std::string> adt = split(aln[0], '/');
     std::vector<std::string> atm = split(aln[1], ':');
     std::vector<std::string> asc = split(atm[2], '.');
@@ -306,7 +305,7 @@ void parse_mag(string lm, ofstream & log){
     char* pEnd;
     stringstream str;
     string longitude, latitude, elevation, geo, magnitude_type, magnitude_size;
-    float fmagnitude_size;
+    double fmagnitude_size;
     
     //istringstream is not standard/not compatible with mingw
     

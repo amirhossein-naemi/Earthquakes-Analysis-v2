@@ -10,6 +10,20 @@
 
 #include "station.h"
 
+void toupper_str(std::string& str) {
+
+    for (size_t i = 0; i < str.size(); ++i)
+        str[i] = toupper(str[i]);
+
+}
+
+string toupper_str_C(std::string str) {
+
+    toupper_str(str);
+
+    return str;
+}
+
 int type_of_instrument_enum(string str_type_of_inst) {
     toupper_str(str_type_of_inst);
     //Case insensitive
@@ -64,3 +78,4 @@ string type_of_inst_string(types_of_instrument type_of_inst) {
         return "ILLEGAL";
     }
 }
+

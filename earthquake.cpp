@@ -48,6 +48,9 @@ int str2int(const std::string& str)
 }
 
 string mnth_enum2str(months mnth) {
+
+    string ret = "January";
+
     switch (mnth) {
     case January:
         return "January";
@@ -86,6 +89,8 @@ string mnth_enum2str(months mnth) {
         return "December";
         break;
     }
+
+    return ret;
 }
 
 months mnth_str2enum(string mnth) {

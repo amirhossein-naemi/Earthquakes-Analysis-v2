@@ -66,8 +66,8 @@ struct earthquake {
     int hr;
     int min;
     int sec;
-    float ms;
-    float magnitude;
+    double ms;
+    double magnitude;
 };
 
 int str2int(const std::string& str);

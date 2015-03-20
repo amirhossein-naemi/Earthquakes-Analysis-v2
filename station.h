@@ -59,17 +59,14 @@ struct station {
     string              Orientation;
 };
 
-
-inline void toupper_str(std::string& str);
-
 int network_code_enum(string str_net_code);
-
-string toupper_str_C(std::string str);
 
 int type_of_instrument_enum(string str_type_of_inst);
 
 int type_of_band_enum(string str_type_of_band);
 
 string type_of_inst_string(types_of_instrument type_of_inst);
+
+inline void toupper_str(std::string& str);
 
 #endif
