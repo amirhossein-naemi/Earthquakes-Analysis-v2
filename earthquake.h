@@ -27,27 +27,27 @@
 using namespace std;
 
 enum months {
-	January=1,
-	February,
-	March,
-	April,
-	May,
-	June,
-	July,
-	August,
-	September,
-	October,
-	November,
-	December
+    January = 1,
+    February,
+    March,
+    April,
+    May,
+    June,
+    July,
+    August,
+    September,
+    October,
+    November,
+    December
 };
 string mnth_enum2str(months mnth);
 
 // Case Insensitive
 enum magnitude_type {
-	ML = 1,
-	Ms,
-	Mb,
-	Mw
+    ML = 1,
+    Ms,
+    Mb,
+    Mw
 };
 
 struct earthquake {
@@ -57,11 +57,11 @@ struct earthquake {
     string tz;
     string earthquake_name;
     months month;
-	magnitude_type magnitude_Type;
-	double lat;
-	double lon;
-	double elv;
-	int yr;
+    magnitude_type magnitude_Type;
+    double lat;
+    double lon;
+    double elv;
+    int yr;
     int day;
     int hr;
     int min;
