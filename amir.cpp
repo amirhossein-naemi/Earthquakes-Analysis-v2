@@ -21,21 +21,16 @@ using namespace std;
 
 earthquake EQ = {};
 
-//const int colbreaksize = 10;
-//const int colsize = 7;
-
 const int MAXDATA = 300;
+station stations[MAXDATA];
 
 int valid, invalid, sign;
 
-
-string types_of_band_str[3] = { "Longperiod", "Shortperiod", "Broadband" };
-char types_of_band_char[3] = { 'L', 'B', 'H' };
+string types_of_band_str[3]       = { "Longperiod", "Shortperiod", "Broadband" };
+char types_of_band_char[3]        = { 'L', 'B', 'H' };
 string types_of_instrument_str[3] = { "High_Gain", "Low_Gain", "Accelerometer" };
-char types_of_instrument_char[3] = { 'H', 'L', 'N' };
-string network_codes_str[5] = { "CE", "CI", "FA", "NP", "WR" };
-
-station stations[MAXDATA];
+char types_of_instrument_char[3]  = { 'H', 'L', 'N' };
+string network_codes_str[5]       = { "CE", "CI", "FA", "NP", "WR" };
 
 void toupper_str(std::string& str) {
 
@@ -96,17 +91,11 @@ void open_output(ofstream & o, string ofilename) {
 	return;
 }
 
-//---------------------------------------------------------------------------
-
+// check for rest of the errors
 bool is_there_any_err(station st) {
+
 	if (st.network_code <1 || st.network_code >5)
 		return true;
-
-	//if (st.type_of_band <1 || st.type_of_band >5)
-	//    return true;
-
-	//if (st.type_of_instrument <1 || st.type_of_instrument >5)
-	//    return true;
 
 	return false;
 }
@@ -255,87 +244,40 @@ bool isok_timezone(string str) {
 	return false;
 }
 
-//time_t parse_dt(string str2)
 void parse_dt(string str2, ofstream & log)
 {
-	// Second row: Date/time
-	//    istringstream(ldt) >> dt >> tm >> tz;
-	//in >> dt >> tm >> tz;
-	//char cdt[50]; strcpy(cdt, ldt.c_str());
-	//istringstream(cdt) >> dt >> tm >> tz;
 
-
-
-	//str << dt << tm << tz << endl;
-	//std::getline(in, nam);
-	//print(log, str);
-
-
-
-	///* 2010-11-04T23:23:01Z */
-	//time_t zulu_time(const char *time_str)
-	//{
-	//	struct tm tm = { 0 };
-
-	//	if (!strptime(time_str, "%Y-%m-%dT%H:%M:%SZ", &tm))
-	//		return (time_t)-1;
-
-	//	return mktime(&tm) - timezone;
-	//}
-
-	//time_t rawtime = {};
-	//struct tm * tm;
-	//tm = {};
-	//or alternatively we can use: memset(&tm, 0, sizeof(struct tm));
-	//memset(&tm, 0, sizeof(struct tm));
 	string dt, tm, tz;
 	string year, mnth, day, hour, min, sec, ms;
-	//int year, month, day, hour, min, sec;
-	//float ms;
-	//char str[28]("02/08/2015 17:45:02.000 PST");
+
 	char str[50];
-	//strcpy(str, tmp.c_str());
 	strncpy(str, str2.c_str(), sizeof(str));
 	str[sizeof(str)-1] = 0;
-	//char str[50] = "02/08/2015 17:45:02.000 PST";
-
-	//struct std::tm tm = {};
-	//02/08/2015 17:45:02.000 PST
-	//std::istringstream ss("16:35:12");
-	//std::istringstream ss2("12/03/2014");
-	//char str2[256];
-	//const char *str = "12/03/2014";
-	//ss >> std::get_time(&tm, "%H:%M:%S"); // or just %T in this case
-	//std::time_t time2 = mktime(&tm);
-	//cout << timeDate.tm_sec << endl;
-	//cout << time2;
 
 	replace(str, str + strlen(str), '/', ' ');
 	replace(str, str + strlen(str), ':', ' ');
-	//istringstream(str) >> day >> month >> year >> hour >> min >> sec >> ms >> tz;
-	//stringstream(str) >> mnth >> day >> year >> hour >> min >> sec >> ms >> tz;
-	//istringstream(str) >> month >> EQ.day >> EQ.yr >> EQ.hr >> EQ.min >> EQ.sec >> EQ.ms >> EQ.tz;
+
 	std::vector<std::string> aln = split(str2, ' ');
 	std::vector<std::string> adt = split(aln[0], '/');
 	std::vector<std::string> atm = split(aln[1], ':');
 	std::vector<std::string> asc = split(atm[2], '.');
 
-	day = adt[1];
+	day  = adt[1];
 	year = adt[2];
 	hour = atm[0];
-	min = atm[1];
-	sec = asc[0];
-	ms = asc[1];
-	tz = aln[2];
+	min  = atm[1];
+	sec  = asc[0];
+	ms   = asc[1];
+	tz   = aln[2];
 
 	EQ.month = mnth_str2enum(adt[0]);
-	EQ.day = str2int(day);
-	EQ.yr = str2int(year);
-	EQ.hr = str2int(hour);
-	EQ.min = str2int(min);
-	EQ.sec = str2int(sec);
-	EQ.ms = str2int(ms);
-	EQ.tz = tz;
+	EQ.day   = str2int(day);
+	EQ.yr    = str2int(year);
+	EQ.hr    = str2int(hour);
+	EQ.min   = str2int(min);
+	EQ.sec   = str2int(sec);
+	EQ.ms    = str2int(ms);
+	EQ.tz    = tz;
 
 	stringstream stro;
 	if (!isok_date())
@@ -351,56 +293,32 @@ void parse_dt(string str2, ofstream & log)
 		print(log, stro);
 		exit(0);
 	}
-
-	//time(&rawtime);
-	//tm = localtime(&rawtime);
-	//tm->tm_year = year - 1900;
-	////tm->tm_year = year;
-	////tm->tm_mon = month - 1;
-	//tm->tm_mon = month;
-	//tm->tm_mday = day;
-	//tm->tm_hour = hour;
-	//tm->tm_min = min;
-	//tm->tm_sec = sec;
-	////tm->
-	//mktime(tm);
-
-	//strftime(str, sizeof(str), "%H:%M:%S %A", tm);
-	//cout << str << endl;
-	//strftime(str, sizeof(str), "%m/%d/%Y", tm);
-	//cout << str << endl;
-	////system("pause");
-
-
-	////	struct tm * timeptr;
-	////	int gmtime_hours;
-	////	timeptr = localtime(&rawtime);
-
-	//return rawtime;
 }
 
 void parse_mag(string lm, ofstream & log){
+	
 	// Fourth row: epicenter location (three doubles: longitude, latitude, and
 	// depth), followed by the magnitude type and magnitude size (a string and a
-	//  float, respectively).
-	// e.g. -115.66 31.53 0.9 mw 4.9
+	// float, respectively). e.g. -115.66 31.53 0.9 mw 4.9
+
 	char* pEnd;
 	stringstream str;
 	string longitude, latitude, elevation, geo, magnitude_type, magnitude_size;
-	//double longitude, latitude, elevation;
 	float fmagnitude_size;
-	//istringstream not compatible with mingw
-	//istringstream(lm) >> longitude >> latitude >> depth >> magnitude_type >> magnitude_size;
-	//stringstream(lm) >> longitude >> latitude >> elevation >> magnitude_type >> magnitude_size;
+	
+	//istringstream is not standard/not compatible with mingw
+	
 	std::vector<std::string> astr = split(lm, ' ');
-	longitude = astr[0];
-	latitude = astr[1];
-	elevation = astr[2];
+	
+	longitude      = astr[0];
+	latitude       = astr[1];
+	elevation      = astr[2];
 	magnitude_type = astr[3];
 	magnitude_size = astr[4];
+
 	char cmagnitude_size[50];
 	strcpy(cmagnitude_size, magnitude_size.c_str());
-	//fmagnitude_size = std::stof(magnitude_size);
+
 	fmagnitude_size = std::strtod(cmagnitude_size, &pEnd);
 	if (!isok_magnitude(magnitude_type))
 	{
@@ -408,10 +326,10 @@ void parse_mag(string lm, ofstream & log){
 		print(log, str);
 		exit(0);
 	}
-	//EQ.magnitude_Type = magnitude_type;
 
 	EQ.magnitude = fmagnitude_size;
-	char clongitude[50], clatitude[50], celevation[50];
+	char clongitude[10], clatitude[10], celevation[10];
+
 	strcpy(celevation, elevation.c_str());
 	strcpy(clatitude, latitude.c_str());
 	strcpy(celevation, elevation.c_str());
@@ -428,7 +346,7 @@ void parse_mag(string lm, ofstream & log){
 	}
 }
 
-void read_header(ifstream & in, ofstream & log) {//, st & stations) {
+void read_header(ifstream & in, ofstream & log) {
 
 	string lID, ldt, lnam, lm, eID, ID, dt, nam, geo, tm, tz, magnitude_type;
 	stringstream str;
@@ -437,18 +355,11 @@ void read_header(ifstream & in, ofstream & log) {//, st & stations) {
 	std::getline(in, ldt);
 	std::getline(in, lnam);
 	std::getline(in, lm);
-	//in >> longitude >> latitude >> depth >> magnitude_type >> magnitude_size;
 
-	//time_t t = {};
-	//t=parse_dt(ldt);
 	parse_dt(ldt, log);
 	parse_mag(lm, log);
-	//struct tm * timeptr;
-	//int gmtime_hours;
-	//timeptr = localtime(&t);
 
 	// First row: Event ID
-	//in  >> eID;
 	str << eID << endl;
 	print(log, str);
 	str.clear();
@@ -456,9 +367,7 @@ void read_header(ifstream & in, ofstream & log) {//, st & stations) {
 	EQ.earthquake_name = lnam;
 	EQ.id = lID;
 
-
 	// Third row: Name of the earthquake (may be multiple words)
-	//std::getline(in, nam);
 	str << lnam << endl;
 	print(log, str, true);
 
@@ -468,8 +377,8 @@ void read_header(ifstream & in, ofstream & log) {//, st & stations) {
 void read_data(ifstream & in, ofstream & out, ofstream & log) {
 
 	stringstream str;
-	string eqnet, eqst, eqbnd, eqins, eqor;//eq->st
-	station   eqtmp;//sttmp
+	string eqnet, eqst, eqbnd, eqins, eqor;
+	station   eqtmp;
 	int  cnt = 0, i = 0;
 	bool noerr;
 	bool other_err = false;
@@ -568,11 +477,12 @@ void process(ifstream & ifile, ofstream & log){
 
 	stringstream str, str2;
 	str.precision(3);
-	str << "# " << EQ.day << " " << mnth_enum2str(EQ.month) << " " << EQ.yr << " ";
-	str << EQ.hr << ":" << EQ.min << ":" << EQ.sec << ":" << std::setprecision(3) << EQ.ms << " " << EQ.tz;
-	str << " " << EQ.magnitude_Type << " " << EQ.magnitude << " ";
-	str << EQ.earthquake_name << " [" << EQ.id << "] (";
-	str << EQ.lon << ", " << EQ.lat << ", " << EQ.elv << ")" << endl;
+	str << "# " << EQ.day << " " << mnth_enum2str(EQ.month) << " " << EQ.yr << " "
+		<< EQ.hr << ":" << EQ.min << ":" << EQ.sec << ":" << std::setprecision(3)
+		<< EQ.ms << " " << EQ.tz
+		<< " " << EQ.magnitude_Type << " " << EQ.magnitude << " "
+		<< EQ.earthquake_name << " [" << EQ.id << "] ("
+		<< EQ.lon << ", " << EQ.lat << ", " << EQ.elv << ")" << endl;
 
 
 
@@ -597,13 +507,10 @@ void process(ifstream & ifile, ofstream & log){
 }
 
 int main() {
-	// const int MAXDATA=300;
-	// station stations[MAXDATA];
-	// station stations[300];
 
-	string   inputfilename;
-	ofstream log, out;
-	ifstream in;
+	string       inputfilename;
+	ofstream     log, out;
+	ifstream     in;
 	stringstream str;
 
 	open_output(log, "amir.log");
@@ -611,13 +518,10 @@ int main() {
 
 	// Prompt user for input/output file
 	cout << "Enter input file: ";
-	cin  >> inputfilename;
+	cin >> inputfilename;
+
 	// sample data for testing purposes
-
-	//cout << "Inter fn: " << endl;
-	//cin.getline(str, sizeof(str));
-
-	//inputfilename = "amir.in";
+	// inputfilename = "amir.in";
 
 	str << endl << "Opening file: " << inputfilename << endl;
 	open_input(in, inputfilename, log);
@@ -636,7 +540,7 @@ int main() {
 	print(out, str);
 
 	str << endl << "Total invalid entries ignored: " << invalid << endl
-		<< "Totoal valid entries read: " << valid << endl
+		<< "Totoal valid entries read: "   << valid << endl
 		<< "Total singal names produced: " << sign << endl;
 	print(log, str);
 
